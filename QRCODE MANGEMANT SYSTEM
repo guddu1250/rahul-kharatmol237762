@@ -1,0 +1,61 @@
+import tkinter as tk
+from tkinter import filedialog
+import qrcode
+import cv2
+from PIL import Image, ImageTk
+
+class QRCodeApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("QR Code Generator and Decoder")
+
+        self.text_var = tk.StringVar()
+        self.image_label = tk.Label(root)
+        self.text_entry = tk.Entry(root, textvariable=self.text_var, width=40)
+        self.generate_button = tk.Button(root, text="Generate QR Code", command=self.generate_qr_code)
+        self.decode_button = tk.Button(root, text="Decode QR Code", command=self.decode_qr_code)
+
+        self.text_entry.grid(row=0, column=0, padx=10, pady=10)
+        self.generate_button.grid(row=0, column=1, padx=10, pady=10)
+        self.decode_button.grid(row=1, column=1, padx=10, pady=10)
+        self.image_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
+
+    def generate_qr_code(self):
+        data_to_encode = self.text_var.get()
+
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,)
+        qr.add_data(data_to_encode)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        # Display QR code image
+        self.display_image(img)
+
+    def decode_qr_code(self):
+        file_path = filedialog.askopenfilename(title="Select QR Code Image", filetypes=[("PNG files", "*.png")])
+
+        if file_path:
+            img = cv2.imread(file_path)
+            detector = cv2.QRCodeDetector()
+
+            value, pts, qr_code = detector.detectAndDecodeMulti(img)
+
+            if value:
+                self.text_var.set("Decoded QR Code: " + value)
+            else:
+                self.text_var.set("QR Code not detected or could not be decoded.")
+
+    def display_image(self, img):
+        img_tk = ImageTk.PhotoImage(img)
+        self.image_label.config(image=img_tk)
+        self.image_label.image = img_tk
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = QRCodeApp(root)
+    root.mainloop()
